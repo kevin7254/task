@@ -9,31 +9,45 @@ import (
 	"task/storage"
 )
 
+// TaskStore is the store used by all commands
+var TaskStore data.StoreInterface
+
 var (
+	// RootCmd is the root command for the task CLI
 	RootCmd = &cobra.Command{
 		Use:   "task",
 		Short: "Task is a CLI tool for managing tasks",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Skip initialization for help command
+			if cmd.Name() == "help" {
+				return nil
+			}
+
+			// Initialize storage if not already done
+			if TaskStore == nil {
+				store, err := initStorage()
+				if err != nil {
+					return err
+				}
+				TaskStore = store
+			}
+			return nil
+		},
 	}
 )
 
-func init() {
-	cobra.OnInitialize(initStorage)
-}
-
-func initStorage() {
-	if data.GlobalStore != nil {
-		return
-	}
-	currentDir, err := os.Getwd()
+// initStorage initializes the task storage
+func initStorage() (data.StoreInterface, error) {
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Printf("wrong dirr for: %v", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to get home directory: %w", err)
 	}
-	storageFile := filepath.Join(currentDir, ".task", "tasks.json")
+
+	storageFile := filepath.Join(homeDir, ".task", "tasks.json")
 	store, err := storage.NewStorage(storageFile)
 	if err != nil {
-		fmt.Printf("wrong with creating new store %v", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to initialize storage: %w", err)
 	}
-	data.SetStore(store)
+
+	return store, nil
 }

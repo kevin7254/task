@@ -1,10 +1,14 @@
 package main
 
-import "task/cmd"
+import (
+	"fmt"
+	"os"
+	"task/cmd"
+)
 
 func main() {
-	err := cmd.RootCmd.Execute()
-	if err != nil {
-		return
+	if err := cmd.RootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
 	}
 }

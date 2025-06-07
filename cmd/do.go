@@ -1,49 +1,66 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"strconv"
 )
 
+var (
+	// Do command flags
+	timeSpent int
+)
+
 // doCmd represents the do command
 var doCmd = &cobra.Command{
-	Use:   "do",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "do ID [ID...]",
+	Short: "Mark task(s) as completed",
+	Long: `Mark one or more tasks as completed by their IDs.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
+Examples:
+  task do 1           # Mark task with ID 1 as completed
+  task do 1 2 3       # Mark multiple tasks as completed
+  task do 1 --time 30 # Mark task as completed and log 30 minutes spent`,
+	Args: cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
 		var ids []int
 		for _, arg := range args {
 			id, err := strconv.Atoi(arg)
 			if err != nil {
-				cmd.Println("Invalid id: " + arg)
-				continue
+				return fmt.Errorf("invalid task ID: %s", arg)
 			}
 			ids = append(ids, id)
 		}
-		if len(ids) == 0 {
-			cmd.Println("No valid IDs were provided.")
-			return
+
+		for _, id := range ids {
+			task := TaskStore.GetTaskByID(id)
+			if task == nil {
+				return fmt.Errorf("task with ID %d not found", id)
+			}
+
+			// Add time spent if specified
+			if timeSpent > 0 {
+				task.AddTimeSpent(int64(timeSpent))
+			}
+
+			// Mark as completed
+			task.Complete()
+
+			// Update in store
+			if err := TaskStore.UpdateTask(task); err != nil {
+				return fmt.Errorf("failed to update task %d: %w", id, err)
+			}
+
+			cmd.Printf("Completed task %d: %s\n", id, task.Title)
 		}
 
-		cmd.Println("do called " + strconv.Itoa(ids[0]))
+		return nil
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(doCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// doCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// doCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// Add flags
+	doCmd.Flags().IntVarP(&timeSpent, "time", "t", 0, "Time spent on the task in minutes")
 }
