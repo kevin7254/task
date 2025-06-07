@@ -1,10 +1,10 @@
 # Requirements task app
 
 ## v0.1.0
-1. Add single task (duh)
+1. Add single task (duh) DONE!
 2. Show all tasks - DONE!
-3. Remove task (only remove)
-4. Tests for all
+3. Remove task (only remove) DONE!
+4. Tests for all DONE!
 
 
 ## v0.2.0
