@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"github.com/kevin7254/task/store"
 	"github.com/spf13/cobra"
-	"task/store"
 )
 
 func NewRootCmd(store store.TaskRepository) *cobra.Command {

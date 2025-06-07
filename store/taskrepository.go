@@ -1,6 +1,6 @@
 package store
 
-import "task/model"
+import "github.com/kevin7254/task/model"
 
 // TaskRepository defines the operations that can be performed on a task store.
 type TaskRepository interface {

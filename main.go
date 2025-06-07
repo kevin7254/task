@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/kevin7254/task/cmd"
+	"github.com/kevin7254/task/store"
 	"log"
 	"os"
 	"path/filepath"
-	"task/cmd"
-	"task/store"
 )
 
 func main() {

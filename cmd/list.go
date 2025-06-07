@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/kevin7254/task/model"
+	"github.com/kevin7254/task/store"
 	"github.com/spf13/cobra"
 	"sort"
 	"strconv"
 	"strings"
-	"task/model"
-	"task/store"
 )
 
 // displayTasksTable formats and prints the list of tasks in a table.

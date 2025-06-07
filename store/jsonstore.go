@@ -3,10 +3,10 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kevin7254/task/model"
 	"os"
 	"path/filepath"
 	"sync"
-	"task/model"
 )
 
 // JsonStore implements the model.TaskRepository for persisting tasks to a JSON file.

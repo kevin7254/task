@@ -2,11 +2,11 @@ package cmd_test
 
 import (
 	"bytes"
+	"github.com/kevin7254/task/cmd"
+	"github.com/kevin7254/task/store"
 	"github.com/spf13/cobra"
 	"path/filepath"
 	"strings"
-	"task/cmd"
-	"task/store"
 	"testing"
 )
 

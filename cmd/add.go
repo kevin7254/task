@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/kevin7254/task/model"
+	"github.com/kevin7254/task/store"
 	"github.com/spf13/cobra"
 	"strings"
-	"task/model"
-	"task/store"
 	"time"
 )
 

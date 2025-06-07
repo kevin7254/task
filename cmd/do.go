@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/kevin7254/task/store"
 	"github.com/spf13/cobra"
 	"strconv"
-	"task/store"
 )
 
 func NewDoCmd(store store.TaskRepository) *cobra.Command {
