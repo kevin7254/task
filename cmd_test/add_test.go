@@ -23,7 +23,6 @@ func setupTestStorage(t *testing.T) *store.JsonStore {
 	tempDir := t.TempDir()
 	testStorageFile := filepath.Join(tempDir, "test_tasks.json")
 
-	// Initialize a real store instance pointing to the temporary file
 	s, err := store.NewJsonStore(testStorageFile)
 	if err != nil {
 		t.Fatalf("Failed to create test store: %v", err)
@@ -32,26 +31,21 @@ func setupTestStorage(t *testing.T) *store.JsonStore {
 }
 
 func TestAddCmd_Success(t *testing.T) {
-	// 1. Setup test environment
 	s := setupTestStorage(t)
 	cobraCmd := cmd.NewRootCmd(s)
 
-	// 2. Define test case
 	taskName := "My New Test Task"
-	args := []string{"add", taskName} // Command is "add", argument is the task name
+	args := []string{"add", taskName} // Command is "add", arg is the task name
 
-	// 3. Execute the command
 	output, execErr := executeCommand(cobraCmd, args...)
 	if execErr != nil {
 		t.Fatalf("executeCommand failed: %v. Output: %s", execErr, output)
 	}
 
-	// 4. Verify command output
 	if !strings.Contains(output, "Successfully added task: "+taskName) {
 		t.Errorf("Expected output to contain task name, but got %q", output)
 	}
 
-	// 5. Verify store state
 	tasks := s.ListAllTasks()
 	if len(tasks) != 1 {
 		t.Fatalf("Expected 1 task in store, found %d", len(tasks))
@@ -65,32 +59,25 @@ func TestAddCmd_Success(t *testing.T) {
 }
 
 func TestAddCmd_EmptyTaskName(t *testing.T) {
-	// 1. Setup test environment
 	s := setupTestStorage(t)
 	cobraCmd := cmd.NewRootCmd(s)
 
-	// 2. Execute command with no task name
 	args := []string{"add"} // No task name provided
 	output, err := executeCommand(cobraCmd, args...)
 
-	// 3. Verify error is returned
 	if err == nil {
 		t.Error("Expected error for empty task name, but got nil")
 	}
 
-	// 4. Verify error message
 	if !strings.Contains(output, "task name cannot be empty") {
 		t.Errorf("Expected error message about empty task name, but got %q", output)
 	}
 }
 
-// TestAddCmd_WithFlags tests adding a task with various flags
 func TestAddCmd_WithFlags(t *testing.T) {
-	// 1. Setup test environment
 	s := setupTestStorage(t)
 	cobraCmd := cmd.NewRootCmd(s)
 
-	// 2. Define test case with flags
 	args := []string{
 		"add",
 		"Test Task With Flags",
@@ -100,13 +87,11 @@ func TestAddCmd_WithFlags(t *testing.T) {
 		"--due", "2023-12-31",
 	}
 
-	// 3. Execute the command
 	output, execErr := executeCommand(cobraCmd, args...)
 	if execErr != nil {
 		t.Fatalf("executeCommand failed: %v. Output: %s", execErr, output)
 	}
 
-	// 4. Verify store state
 	tasks := s.ListAllTasks()
 	if len(tasks) != 1 {
 		t.Fatalf("Expected 1 task in store, found %d", len(tasks))
