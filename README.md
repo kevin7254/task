@@ -56,9 +56,6 @@ Task CLI is a powerful command-line task management application written in Go. I
 
 ## Usage
 
-
-## Usage
-
 ### Adding Tasks
 
 Add a new task with a title:
