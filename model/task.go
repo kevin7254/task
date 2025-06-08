@@ -45,7 +45,8 @@ func (t *Task) String() string {
 		status = "⚠️"
 	}
 
-	return fmt.Sprintf("%s %s [%s] Due: %s (%d min spent)",
+	return fmt.Sprintf(
+		"\nStatus: %s\nTitle: %s\nProject: %s\nDue Date: %s\nTime Spent: %d min\n",
 		status,
 		t.Title,
 		t.Project,
