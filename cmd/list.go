@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/kevin7254/task/model"
 	"github.com/kevin7254/task/store"
@@ -124,8 +125,7 @@ func (dm *DisplayManager) RenderTasks(tasks []*model.Task, view string) error {
 	if len(rows) == 0 {
 		return nil // Nothing to render
 	}
-	dm.renderTable(headers, rows)
-	return nil
+	return dm.renderTable(headers, rows)
 }
 
 // buildTableData transforms tasks into headers and rows based on the selected view.
@@ -158,56 +158,22 @@ func buildTableData(tasks []*model.Task, view string) (headers []string, rows []
 }
 
 // renderTable is a generic function that can print any table given headers and rows.
-func (dm *DisplayManager) renderTable(headers []string, rows [][]string) {
+func (dm *DisplayManager) renderTable(headers []string, rows [][]string) error {
 	if len(headers) == 0 || len(rows) == 0 {
-		return
+		return nil
 	}
 
-	// 1. Calculate column widths
-	widths := make([]int, len(headers))
-	for i, h := range headers {
-		widths[i] = len(h)
+	w := tabwriter.NewWriter(dm.writer, 0, 0, 2, ' ', 0)
+	if _, err := fmt.Fprintln(w, strings.Join(headers, "\t")); err != nil {
+		return err
 	}
 	for _, row := range rows {
-		for i, cell := range row {
-			if len(cell) > widths[i] {
-				widths[i] = len(cell)
-			}
+		if _, err := fmt.Fprintln(w, strings.Join(row, "\t")); err != nil {
+			return err
 		}
 	}
+	return w.Flush()
 
-	// 2. Create a format string
-	var fmtBuilder strings.Builder
-	for _, w := range widths {
-		fmtBuilder.WriteString(fmt.Sprintf("%%-%ds | ", w))
-	}
-	// Trim the last "|"
-	format := strings.TrimSuffix(fmtBuilder.String(), " | ") + "\n"
-
-	// 3. Print Header
-	headerContent := make([]interface{}, len(headers))
-	for i, h := range headers {
-		headerContent[i] = h
-	}
-	_, _ = fmt.Fprintf(dm.writer, format, headerContent...)
-
-	// 4. Print Separator
-	var sepBuilder strings.Builder
-	for _, w := range widths {
-		sepBuilder.WriteString(strings.Repeat("-", w))
-		sepBuilder.WriteString("-+-")
-	}
-	separator := strings.TrimSuffix(sepBuilder.String(), "-+-") + "\n"
-	_, _ = fmt.Fprint(dm.writer, separator)
-
-	// 5. Print Rows
-	for _, row := range rows {
-		rowContent := make([]interface{}, len(row))
-		for i, v := range row {
-			rowContent[i] = v
-		}
-		_, _ = fmt.Fprintf(dm.writer, format, rowContent...)
-	}
 }
 
 func getStatusIcon(task *model.Task) string {
