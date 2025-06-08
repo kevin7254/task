@@ -17,20 +17,24 @@
 ## v0.3.0
 1. Sort tasks - DONE
 2. Store tasks (DB or locally) - DONE
-3. README
-4. "Basic info" - DONE
-5. Tests
+3. "Basic info" - DONE
+4. Tests
 
 
 ## v0.4.0
-1. Documentation
-2. Color support
-3. Profile?
-4. Tests
-5. Edit tasks
+1. Documentation / README
+2. Tests
+3. Edit tasks
+4. Undo/redo
+5. Clear all tasks
+6. Interactive add/edit
+7. Show specific task
 
 ## v0.5.0
 1. Group tasks
-2. Undo/redo (if mistake)
-3. Stats
+2. Color support
+3. Profile?
 4. Tests
+
+## v0.6.0
+1. Sync

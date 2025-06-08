@@ -3,6 +3,7 @@ package cmd_test
 import (
 	"bytes"
 	"github.com/kevin7254/task/cmd"
+	"github.com/kevin7254/task/model"
 	"github.com/kevin7254/task/store"
 	"github.com/spf13/cobra"
 	"path/filepath"
@@ -35,16 +36,23 @@ func TestDoCmd(t *testing.T) {
 	s := setupTestStorage(t)
 	cobraCmd := cmd.NewRootCmd(s)
 
-	taskName := "My New Test Task"
-	output := "Successfully added task: "
-	assertCommand(t, cobraCmd, "add", taskName, output)
-	assertListTasks(t, s, taskName)
+	task := &model.Task{Title: "Original Task Title"}
+	err := s.AddTask(task)
+	if err != nil {
+		t.Fatalf("Failed to add initial task: %v", err)
+	}
+	taskID := strconv.Itoa(task.ID)
 
-	tasks := s.ListAllTasks()
-
-	// do with ID
 	doOutput := "Completed task "
-	assertCommand(t, cobraCmd, "do", strconv.Itoa(tasks[0].ID), doOutput)
+	assertCommand(t, cobraCmd, "do", taskID, doOutput)
+
+	updatedTask := s.GetTaskByID(task.ID)
+	if updatedTask == nil {
+		t.Fatalf("Task with ID %d should exist but was not found.", task.ID)
+	}
+	if updatedTask.CompletedAt.IsZero() {
+		t.Errorf("Expected to be completed %q", updatedTask.CompletedAt)
+	}
 }
 
 func TestAddCmd(t *testing.T) {
@@ -55,6 +63,51 @@ func TestAddCmd(t *testing.T) {
 
 	assertCommand(t, cobraCmd, "add", taskName, output)
 	assertListTasks(t, s, taskName)
+}
+
+func TestEditCmd(t *testing.T) {
+	s := setupTestStorage(t)
+
+	// Create a sample task in the store.
+	task := &model.Task{Title: "Original Task Title"}
+	err := s.AddTask(task)
+	if err != nil {
+		t.Fatalf("Failed to add initial task: %v", err)
+	}
+	taskID := strconv.Itoa(task.ID)
+
+	cobraCmd := cmd.NewEditCmd(s)
+	newTitle := "Updated Task Title"
+	args := []string{taskID, "--title", newTitle}
+	output, execErr := executeCommand(cobraCmd, args...)
+	if execErr != nil {
+		t.Fatalf("Expected no error, got %v. Output: %s", execErr, output)
+	}
+	if !strings.Contains(output, "Updated task with ID") {
+		t.Errorf("Expected success message, got: %q", output)
+	}
+
+	updatedTask := s.GetTaskByID(task.ID)
+	if updatedTask == nil {
+		t.Fatalf("Task with ID %d should exist but was not found.", task.ID)
+	}
+	if updatedTask.Title != newTitle {
+		t.Errorf("Expected task title to be %q, got %q", newTitle, updatedTask.Title)
+	}
+
+	invalidID := "abc"
+	args = []string{invalidID, "--title", newTitle}
+	output, execErr = executeCommand(cobraCmd, args...)
+	if execErr == nil || !strings.Contains(output, "invalid task ID") {
+		t.Errorf("Expected error for invalid task ID. Output: %s", output)
+	}
+
+	nonExistentID := strconv.Itoa(task.ID + 999)
+	args = []string{nonExistentID, "--title", newTitle}
+	output, execErr = executeCommand(cobraCmd, args...)
+	if execErr == nil || !strings.Contains(output, "task with ID") {
+		t.Errorf("Expected error for non-existent task ID. Output: %s", output)
+	}
 }
 
 func TestAddCmd_EmptyTaskName(t *testing.T) {

@@ -14,5 +14,6 @@ func NewRootCmd(store store.TaskRepository) *cobra.Command {
 	rootCmd.AddCommand(NewDoCmd(store))
 	rootCmd.AddCommand(NewListCmd(store))
 	rootCmd.AddCommand(NewRemoveCmd(store))
+	rootCmd.AddCommand(NewEditCmd(store))
 	return rootCmd
 }
