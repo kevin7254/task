@@ -12,32 +12,11 @@ import (
 	"testing"
 )
 
-func executeCommand(root *cobra.Command, args ...string) (output string, err error) {
-	buf := new(bytes.Buffer)
-	root.SetOut(buf)
-	root.SetErr(buf)
-	root.SetArgs(args)
-	_, err = root.ExecuteC()
-	return buf.String(), err
-}
-
-func setupTestStorage(t *testing.T) *store.JsonStore {
-	tempDir := t.TempDir()
-	testStorageFile := filepath.Join(tempDir, "test_tasks.json")
-
-	s, err := store.NewJsonStore(testStorageFile)
-	if err != nil {
-		t.Fatalf("Failed to create test store: %v", err)
-	}
-	return s
-}
-
 func TestDoCmd(t *testing.T) {
-	s := setupTestStorage(t)
-	cobraCmd := cmd.NewRootCmd(s)
+	testStore, cobraCmd := beforeTests(t)
 
 	task := &model.Task{Title: "Original Task Title"}
-	err := s.AddTask(task)
+	err := testStore.AddTask(task)
 	if err != nil {
 		t.Fatalf("Failed to add initial task: %v", err)
 	}
@@ -46,7 +25,7 @@ func TestDoCmd(t *testing.T) {
 	doOutput := "Completed task "
 	assertCommand(t, cobraCmd, "do", taskID, doOutput)
 
-	updatedTask := s.GetTaskByID(task.ID)
+	updatedTask := testStore.GetTaskByID(task.ID)
 	if updatedTask == nil {
 		t.Fatalf("Task with ID %d should exist but was not found.", task.ID)
 	}
@@ -56,30 +35,29 @@ func TestDoCmd(t *testing.T) {
 }
 
 func TestAddCmd(t *testing.T) {
-	s := setupTestStorage(t)
-	cobraCmd := cmd.NewRootCmd(s)
+	testStore, cobraCmd := beforeTests(t)
 	taskName := "My New Test Task"
 	output := "Successfully added task: "
 
 	assertCommand(t, cobraCmd, "add", taskName, output)
-	assertListTasks(t, s, taskName)
+	assertListTasks(t, testStore, taskName)
 }
 
 func TestEditCmd(t *testing.T) {
-	s := setupTestStorage(t)
+	testStore, _ := beforeTests(t)
 
 	// Create a sample task in the store.
 	task := &model.Task{Title: "Original Task Title"}
-	err := s.AddTask(task)
+	err := testStore.AddTask(task)
 	if err != nil {
 		t.Fatalf("Failed to add initial task: %v", err)
 	}
 	taskID := strconv.Itoa(task.ID)
 
-	cobraCmd := cmd.NewEditCmd(s)
+	editCmd := cmd.NewEditCmd(testStore)
 	newTitle := "Updated Task Title"
 	args := []string{taskID, "--title", newTitle}
-	output, execErr := executeCommand(cobraCmd, args...)
+	output, execErr := executeCommand(editCmd, args...)
 	if execErr != nil {
 		t.Fatalf("Expected no error, got %v. Output: %s", execErr, output)
 	}
@@ -87,7 +65,7 @@ func TestEditCmd(t *testing.T) {
 		t.Errorf("Expected success message, got: %q", output)
 	}
 
-	updatedTask := s.GetTaskByID(task.ID)
+	updatedTask := testStore.GetTaskByID(task.ID)
 	if updatedTask == nil {
 		t.Fatalf("Task with ID %d should exist but was not found.", task.ID)
 	}
@@ -97,22 +75,21 @@ func TestEditCmd(t *testing.T) {
 
 	invalidID := "abc"
 	args = []string{invalidID, "--title", newTitle}
-	output, execErr = executeCommand(cobraCmd, args...)
+	output, execErr = executeCommand(editCmd, args...)
 	if execErr == nil || !strings.Contains(output, "invalid task ID") {
 		t.Errorf("Expected error for invalid task ID. Output: %s", output)
 	}
 
 	nonExistentID := strconv.Itoa(task.ID + 999)
 	args = []string{nonExistentID, "--title", newTitle}
-	output, execErr = executeCommand(cobraCmd, args...)
+	output, execErr = executeCommand(editCmd, args...)
 	if execErr == nil || !strings.Contains(output, "task with ID") {
 		t.Errorf("Expected error for non-existent task ID. Output: %s", output)
 	}
 }
 
 func TestAddCmd_EmptyTaskName(t *testing.T) {
-	s := setupTestStorage(t)
-	cobraCmd := cmd.NewRootCmd(s)
+	_, cobraCmd := beforeTests(t)
 
 	args := []string{"add"} // No task name provided
 	output, err := executeCommand(cobraCmd, args...)
@@ -127,8 +104,7 @@ func TestAddCmd_EmptyTaskName(t *testing.T) {
 }
 
 func TestAddCmd_WithFlags(t *testing.T) {
-	s := setupTestStorage(t)
-	cobraCmd := cmd.NewRootCmd(s)
+	testStore, cobraCmd := beforeTests(t)
 
 	args := []string{
 		"add",
@@ -144,7 +120,7 @@ func TestAddCmd_WithFlags(t *testing.T) {
 		t.Fatalf("executeCommand failed: %v. Output: %s", execErr, output)
 	}
 
-	tasks := s.ListAllTasks()
+	tasks := testStore.ListAllTasks()
 	if len(tasks) != 1 {
 		t.Fatalf("Expected 1 task in store, found %d", len(tasks))
 	}
@@ -199,4 +175,29 @@ func assertListTasks(t testing.TB, store *store.JsonStore, taskName string) {
 	if tasks[0].ID <= 0 {
 		t.Errorf("Expected task ID to be positive, got %d", tasks[0].ID)
 	}
+}
+
+func executeCommand(root *cobra.Command, args ...string) (output string, err error) {
+	buf := new(bytes.Buffer)
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs(args)
+	_, err = root.ExecuteC()
+	return buf.String(), err
+}
+
+func beforeTests(t *testing.T) (store *store.JsonStore, cobraCmd *cobra.Command) {
+	store = setupTestStorage(t)
+	return store, cmd.NewRootCmd(store)
+}
+
+func setupTestStorage(t *testing.T) *store.JsonStore {
+	tempDir := t.TempDir()
+	testStorageFile := filepath.Join(tempDir, "test_tasks.json")
+
+	s, err := store.NewJsonStore(testStorageFile)
+	if err != nil {
+		t.Fatalf("Failed to create test store: %v", err)
+	}
+	return s
 }
