@@ -6,6 +6,7 @@ import (
 	"github.com/kevin7254/task/store"
 	"github.com/spf13/cobra"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -30,32 +31,30 @@ func setupTestStorage(t *testing.T) *store.JsonStore {
 	return s
 }
 
-func TestAddCmd_Success(t *testing.T) {
+func TestDoCmd(t *testing.T) {
 	s := setupTestStorage(t)
 	cobraCmd := cmd.NewRootCmd(s)
 
 	taskName := "My New Test Task"
-	args := []string{"add", taskName} // Command is "add", arg is the task name
-
-	output, execErr := executeCommand(cobraCmd, args...)
-	if execErr != nil {
-		t.Fatalf("executeCommand failed: %v. Output: %s", execErr, output)
-	}
-
-	if !strings.Contains(output, "Successfully added task: "+taskName) {
-		t.Errorf("Expected output to contain task name, but got %q", output)
-	}
+	output := "Successfully added task: "
+	assertCommand(t, cobraCmd, "add", taskName, output)
+	assertListTasks(t, s, taskName)
 
 	tasks := s.ListAllTasks()
-	if len(tasks) != 1 {
-		t.Fatalf("Expected 1 task in store, found %d", len(tasks))
-	}
-	if tasks[0].Title != taskName {
-		t.Errorf("Expected task name to be %q, got %q", taskName, tasks[0].Title)
-	}
-	if tasks[0].ID <= 0 {
-		t.Errorf("Expected task ID to be positive, got %d", tasks[0].ID)
-	}
+
+	// do with ID
+	doOutput := "Completed task "
+	assertCommand(t, cobraCmd, "do", strconv.Itoa(tasks[0].ID), doOutput)
+}
+
+func TestAddCmd(t *testing.T) {
+	s := setupTestStorage(t)
+	cobraCmd := cmd.NewRootCmd(s)
+	taskName := "My New Test Task"
+	output := "Successfully added task: "
+
+	assertCommand(t, cobraCmd, "add", taskName, output)
+	assertListTasks(t, s, taskName)
 }
 
 func TestAddCmd_EmptyTaskName(t *testing.T) {
@@ -109,5 +108,42 @@ func TestAddCmd_WithFlags(t *testing.T) {
 	}
 	if task.Priority != 2 {
 		t.Errorf("Expected task priority to be 2, got %d", task.Priority)
+	}
+}
+
+func assertCommand(t testing.TB, cobraCmd *cobra.Command, inputCmd, taskName, output string) {
+	t.Helper()
+	outputExec, execErr := executeCommand(cobraCmd, []string{inputCmd, taskName}...)
+
+	assertErr(t, output, execErr)
+	want := output + taskName
+	assertOutputContains(t, want, outputExec)
+}
+
+func assertOutputContains(t testing.TB, want, got string) {
+	t.Helper()
+	if !strings.Contains(got, want) {
+		t.Errorf("Expected output to contain task name, but got %q", got)
+	}
+}
+
+func assertErr(t testing.TB, output string, execErr error) {
+	t.Helper()
+	if execErr != nil {
+		t.Fatalf("executeCommand failed: %v. Output: %s", execErr, output)
+	}
+}
+
+func assertListTasks(t testing.TB, store *store.JsonStore, taskName string) {
+	t.Helper()
+	tasks := store.ListAllTasks()
+	if len(tasks) != 1 {
+		t.Fatalf("Expected 1 task in store, found %d", len(tasks))
+	}
+	if tasks[0].Title != taskName {
+		t.Errorf("Expected task name to be %q, got %q", taskName, tasks[0].Title)
+	}
+	if tasks[0].ID <= 0 {
+		t.Errorf("Expected task ID to be positive, got %d", tasks[0].ID)
 	}
 }

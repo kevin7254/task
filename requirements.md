@@ -8,10 +8,10 @@
 
 
 ## v0.2.0
-1. Add prio to task
-2. Mark task as completed
-3. Show date created
-4. Tests
+1. Add prio to task - DONE
+2. Mark task as completed - DONE
+3. Show date created - DONE
+4. Tests - DONE
 
 
 ## v0.3.0
